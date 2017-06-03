@@ -393,6 +393,10 @@ public class DrawingView extends View {
 								cursor0.getCurrentPosition(),
 								cursor1.getCurrentPosition()
 							);
+
+						} else if ( cursorContainer.getNumCursors() == 1 && type == MotionEvent.ACTION_MOVE ) {
+							MyCursor cursor0 = cursorContainer.getCursorByIndex( 0 );
+							gw.pan(cursor0.getCurrentPosition().x() - cursor0.getPreviousPosition().x(), cursor0.getCurrentPosition().y() - cursor0.getPreviousPosition().y());
 						}
 						else if ( type == MotionEvent.ACTION_UP ) {
 							cursorContainer.removeCursorByIndex( cursorIndex );
