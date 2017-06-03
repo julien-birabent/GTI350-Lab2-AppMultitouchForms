@@ -178,13 +178,20 @@ public class DrawingView extends View {
 	static final int MODE_CAMERA_MANIPULATION = 1; // the user is panning/zooming the camera
 	static final int MODE_SHAPE_MANIPULATION = 2; // the user is translating/rotating/scaling a shape
 	static final int MODE_LASSO = 3; // the user is drawing a lasso to select shapes
-	int currentMode = MODE_NEUTRAL;
+	static final int MODE_ERASE = 4; // the user is drawing a lasso to select shapes
+	static final int MODE_CREATE = 5; // the user is drawing a lasso to select shapes
+    static final int MODE_CENTER = 6; // the user is pressing on the center button. only used for highlighting button
+
+    int currentMode = MODE_NEUTRAL;
 
 	// This is only used when currentMode==MODE_SHAPE_MANIPULATION, otherwise it is equal to -1
 	int indexOfShapeBeingManipulated = -1;
 
 	MyButton lassoButton = new MyButton( "Lasso", 10, 70, 140, 140 );
-	
+	MyButton centerButton = new MyButton( "Center", 10, 220, 140, 140 );
+	MyButton eraseButton = new MyButton( "Erase", 10, 370, 140, 140 );
+	MyButton createButton = new MyButton( "Create", 10, 520, 140, 140 );
+
 	OnTouchListener touchListener;
 	
 	public DrawingView(Context context) {
@@ -255,6 +262,9 @@ public class DrawingView extends View {
 		gw.setCoordinateSystemToPixels();
 
 		lassoButton.draw( gw, currentMode == MODE_LASSO );
+		centerButton.draw( gw, currentMode == MODE_CENTER );
+		eraseButton.draw( gw, currentMode == MODE_ERASE );
+		createButton.draw( gw, currentMode == MODE_CREATE );
 
 		if ( currentMode == MODE_LASSO ) {
 			MyCursor lassoCursor = cursorContainer.getCursorByType( MyCursor.TYPE_DRAGGING, 0 );
@@ -350,6 +360,18 @@ public class DrawingView extends View {
 								currentMode = MODE_LASSO;
 								cursor.setType( MyCursor.TYPE_BUTTON );
 							}
+                            else if ( createButton.contains(p_pixels) ) {
+                                currentMode = MODE_CREATE;
+                                cursor.setType( MyCursor.TYPE_BUTTON );
+                            }
+                            else if ( eraseButton.contains(p_pixels) ) {
+                                currentMode = MODE_ERASE;
+                                cursor.setType( MyCursor.TYPE_BUTTON );
+                            }
+                            else if ( centerButton.contains(p_pixels) ) {
+                                currentMode = MODE_CENTER;
+                                cursor.setType( MyCursor.TYPE_BUTTON );
+                            }
 							else if ( indexOfShapeBeingManipulated >= 0 ) {
 								currentMode = MODE_SHAPE_MANIPULATION;
 								cursor.setType( MyCursor.TYPE_DRAGGING );
@@ -434,6 +456,30 @@ public class DrawingView extends View {
 							}
 						}
 						break;
+						case MODE_CREATE:
+							if ( type == MotionEvent.ACTION_UP ) {
+								cursorContainer.removeCursorByIndex( cursorIndex );
+								if ( cursorContainer.getNumCursors() == 0 ) {
+									currentMode = MODE_NEUTRAL;
+								}
+							}
+							break;
+						case MODE_ERASE:
+							if ( type == MotionEvent.ACTION_UP ) {
+								cursorContainer.removeCursorByIndex( cursorIndex );
+								if ( cursorContainer.getNumCursors() == 0 ) {
+									currentMode = MODE_NEUTRAL;
+								}
+							}
+							break;
+						case MODE_CENTER:
+							if ( type == MotionEvent.ACTION_UP ) {
+								cursorContainer.removeCursorByIndex( cursorIndex );
+								if ( cursorContainer.getNumCursors() == 0 ) {
+									currentMode = MODE_NEUTRAL;
+								}
+							}
+							break;
 					}
 					
 					v.invalidate();
