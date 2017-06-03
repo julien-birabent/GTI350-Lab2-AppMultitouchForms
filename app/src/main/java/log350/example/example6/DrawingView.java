@@ -186,6 +186,8 @@ public class DrawingView extends View {
 
 	// This is only used when currentMode==MODE_SHAPE_MANIPULATION, otherwise it is equal to -1
 	int indexOfShapeBeingManipulated = -1;
+	// This is only used when there is atleast one shape selected by the lasso
+	ArrayList<Point2D> polygonOfSelectedShapes = new ArrayList<Point2D>();
 
 	MyButton lassoButton = new MyButton( "Lasso", 10, 70, 140, 140 );
 	MyButton centerButton = new MyButton( "Center", 10, 220, 140, 140 );
@@ -226,7 +228,19 @@ public class DrawingView extends View {
 		shapeContainer.addShape( arrayList );
 		arrayList.clear();
 	}
-	
+
+	private ArrayList<Point2D> getExpandedPolygonPointsFromSelection(ArrayList<Shape> selectedShapes) {
+		ArrayList< Point2D > points = new ArrayList< Point2D >();
+		AlignedRectangle2D rect = new AlignedRectangle2D();
+		for ( Shape s : selectedShapes ) {
+			for ( Point2D p : s.getPoints() ) {
+				points.add( p );
+				rect.bound( p );
+			}
+		}
+		points = Point2DUtil.computeConvexHull( points );
+		return Point2DUtil.computeExpandedPolygon( points, rect.getDiagonal().length()/30 );
+	}
 	
 	@Override
 	protected void onDraw(Canvas canvas) {
@@ -241,19 +255,9 @@ public class DrawingView extends View {
 
 		// draw a polygon around the currently selected shapes
 		if ( selectedShapes.size() > 0 ) {
-			ArrayList< Point2D > points = new ArrayList< Point2D >();
-			AlignedRectangle2D rect = new AlignedRectangle2D();
-			for ( Shape s : selectedShapes ) {
-				for ( Point2D p : s.getPoints() ) {
-					points.add( p );
-					rect.bound( p );
-				}
-			}
-			points = Point2DUtil.computeConvexHull( points );
-			points = Point2DUtil.computeExpandedPolygon( points, rect.getDiagonal().length()/30 );
 
 			gw.setColor( 1.0f, 0.0f, 0.0f, 0.8f );
-			gw.fillPolygon( points );
+			gw.fillPolygon( getExpandedPolygonPointsFromSelection(selectedShapes) );
 		}
 
 		// draw all the shapes
@@ -356,6 +360,7 @@ public class DrawingView extends View {
 							Point2D p_pixels = new Point2D(x,y);
 							Point2D p_world = gw.convertPixelsToWorldSpaceUnits( p_pixels );
 							indexOfShapeBeingManipulated = shapeContainer.indexOfShapeContainingGivenPoint( p_world );
+							polygonOfSelectedShapes = getExpandedPolygonPointsFromSelection(selectedShapes);
 							if ( lassoButton.contains(p_pixels) ) {
 								currentMode = MODE_LASSO;
 								cursor.setType( MyCursor.TYPE_BUTTON );
@@ -372,6 +377,11 @@ public class DrawingView extends View {
                                 currentMode = MODE_CENTER;
                                 cursor.setType( MyCursor.TYPE_BUTTON );
                             }
+                            else if (selectedShapes.size() > 0 && Point2DUtil.isPointInsidePolygon(polygonOfSelectedShapes, p_pixels)) {
+								// FIXME: isPointInsidePolygon should return true, but it's not
+								currentMode = MODE_SHAPE_MANIPULATION;
+								cursor.setType( MyCursor.TYPE_DRAGGING );
+							}
 							else if ( indexOfShapeBeingManipulated >= 0 ) {
 								currentMode = MODE_SHAPE_MANIPULATION;
 								cursor.setType( MyCursor.TYPE_DRAGGING );
@@ -424,6 +434,15 @@ public class DrawingView extends View {
 
 							Point2DUtil.transformPointsBasedOnDisplacementOfOnePoint(
 									shape.getPoints(),
+									gw.convertPixelsToWorldSpaceUnits( cursor0.getPreviousPosition() ),
+									gw.convertPixelsToWorldSpaceUnits( cursor0.getCurrentPosition() )
+							);
+						}
+						else if ( cursorContainer.getNumCursors() == 1 && type == MotionEvent.ACTION_MOVE && selectedShapes.size() > 0 ){
+							MyCursor cursor0 = cursorContainer.getCursorByIndex( 0 );
+
+							Point2DUtil.transformPointsBasedOnDisplacementOfOnePoint(
+									polygonOfSelectedShapes,
 									gw.convertPixelsToWorldSpaceUnits( cursor0.getPreviousPosition() ),
 									gw.convertPixelsToWorldSpaceUnits( cursor0.getCurrentPosition() )
 							);
