@@ -475,7 +475,15 @@ public class DrawingView extends View {
 							}
 							break;
 						case MODE_ERASE:
-							if ( type == MotionEvent.ACTION_UP ) {
+							if ( cursorContainer.getNumCursors() == 2 && type == MotionEvent.ACTION_DOWN) {
+								Point2D p_pixels = new Point2D(x,y);
+								Point2D p_world = gw.convertPixelsToWorldSpaceUnits( p_pixels );
+								indexOfShapeBeingManipulated = shapeContainer.indexOfShapeContainingGivenPoint( p_world );
+								if ( indexOfShapeBeingManipulated > -1 ) {
+									shapeContainer.removeShape(indexOfShapeBeingManipulated);
+								}
+							}
+							else if ( type == MotionEvent.ACTION_UP ) {
 								cursorContainer.removeCursorByIndex( cursorIndex );
 								if ( cursorContainer.getNumCursors() == 0 ) {
 									currentMode = MODE_NEUTRAL;
