@@ -515,6 +515,9 @@ public class DrawingView extends View {
 							break;
 						case MODE_CENTER:
 							if ( type == MotionEvent.ACTION_UP ) {
+
+								gw.frame(shapeContainer.getBoundingRectangle(), true);
+
 								cursorContainer.removeCursorByIndex( cursorIndex );
 								if ( cursorContainer.getNumCursors() == 0 ) {
 									currentMode = MODE_NEUTRAL;
