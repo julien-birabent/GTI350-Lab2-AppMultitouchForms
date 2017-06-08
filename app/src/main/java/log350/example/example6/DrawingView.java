@@ -491,6 +491,22 @@ public class DrawingView extends View {
 						break;
 						case MODE_CREATE:
 							if ( type == MotionEvent.ACTION_UP ) {
+
+								ArrayList<Point2D> newShapePoints = new ArrayList<Point2D>();
+
+								// 1 curseur pour le boutton, 3 curseurs pour la forme minimum
+								if(cursorContainer.getNumCursors() >= 4 ){
+									for(int i = 0 ; i < cursorContainer.getNumCursors(); i++){
+										if(cursorContainer.getCursorByIndex(i).getType() == MyCursor.TYPE_DRAGGING){
+											Point2D pointToAdd = cursorContainer.getCursorByIndex(i).getCurrentPosition();
+											newShapePoints.add(pointToAdd);
+										}
+									}
+									ArrayList<Point2D> computedNewShape = new ArrayList<Point2D>();
+									computedNewShape = Point2DUtil.computeConvexHull(newShapePoints);
+									shapeContainer.addShape(computedNewShape);
+								}
+								
 								cursorContainer.removeCursorByIndex( cursorIndex );
 								if ( cursorContainer.getNumCursors() == 0 ) {
 									currentMode = MODE_NEUTRAL;
