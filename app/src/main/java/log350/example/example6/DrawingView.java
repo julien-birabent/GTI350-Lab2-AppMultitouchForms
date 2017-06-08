@@ -286,6 +286,22 @@ public class DrawingView extends View {
 		}
 
 	}
+
+	private ArrayList<Point2D> createShape() {
+		ArrayList<Point2D> newShapePoints = new ArrayList<Point2D>();
+
+		// 1 curseur pour le boutton, 3 curseurs pour la forme minimum
+
+		for(int i = 0 ; i < cursorContainer.getNumCursors(); i++){
+			if(cursorContainer.getCursorByIndex(i).getType() == MyCursor.TYPE_IGNORE){
+				Point2D pointToAdd = cursorContainer.getCursorByIndex(i).getCurrentPosition();
+				newShapePoints.add(gw.convertPixelsToWorldSpaceUnits(pointToAdd));
+			}
+		}
+		ArrayList<Point2D> computedNewShape = new ArrayList<Point2D>();
+		return Point2DUtil.computeConvexHull(newShapePoints);
+
+	}
 	
 	/**
 	 * Returns a listener
@@ -490,29 +506,34 @@ public class DrawingView extends View {
 						}
 						break;
 						case MODE_CREATE:
-							if ( type == MotionEvent.ACTION_UP ) {
-
-								ArrayList<Point2D> newShapePoints = new ArrayList<Point2D>();
-
+							if ( type == MotionEvent.ACTION_DOWN ) {
 								// 1 curseur pour le boutton, 3 curseurs pour la forme minimum
-								if(cursorContainer.getNumCursors() >= 4 ){
-									for(int i = 0 ; i < cursorContainer.getNumCursors(); i++){
-										if(cursorContainer.getCursorByIndex(i).getType() == MyCursor.TYPE_DRAGGING){
-											Point2D pointToAdd = cursorContainer.getCursorByIndex(i).getCurrentPosition();
-											newShapePoints.add(pointToAdd);
-										}
+								if(cursorContainer.getNumCursors() >= 4 ) {
+									ArrayList<Point2D> computedNewShape = createShape();
+
+									if (cursorContainer.getNumCursors() > 4) {
+										shapeContainer.removeShape(shapeContainer.shapes.size() - 1);
 									}
-									ArrayList<Point2D> computedNewShape = new ArrayList<Point2D>();
-									computedNewShape = Point2DUtil.computeConvexHull(newShapePoints);
+
 									shapeContainer.addShape(computedNewShape);
 								}
-								
+							} else if ( type == MotionEvent.ACTION_MOVE ) {
+								if(cursorContainer.getNumCursors() >= 4 ){
+									shapeContainer.removeShape(shapeContainer.shapes.size() - 1);
+
+									ArrayList<Point2D> computedNewShape = createShape();
+
+									shapeContainer.addShape(computedNewShape);
+								}
+
+							} else if ( type == MotionEvent.ACTION_UP ) {
 								cursorContainer.removeCursorByIndex( cursorIndex );
 								if ( cursorContainer.getNumCursors() == 0 ) {
 									currentMode = MODE_NEUTRAL;
 								}
 							}
-							break;
+
+								break;
 						case MODE_ERASE:
 							if ( cursorContainer.getNumCursors() == 2 && type == MotionEvent.ACTION_DOWN) {
 								Point2D p_pixels = new Point2D(x,y);
