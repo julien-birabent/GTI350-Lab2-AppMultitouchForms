@@ -501,6 +501,11 @@ public class DrawingView extends View {
 										selectedShapes.add( s );
 									}
 								}
+							}else if(cursor.getType() == MyCursor.TYPE_IGNORE ){
+								if(!selectedShapes.isEmpty()){
+									selectedShapes.clear();
+									currentMode = MODE_NEUTRAL;
+								}
 							}
 							cursorContainer.removeCursorByIndex( cursorIndex );
 							if ( cursorContainer.getNumCursors() == 0 ) {
